@@ -40,7 +40,8 @@ namespace Swindlecord.Services
             _messages = new List<SocketUserMessage>();
             _http = new HttpClient();
             _discord.Ready += OnReadyAsync;
-            _discord.MessageReceived += OnMessageReceived;
+            _discord.MessageReceived += OnMessageReceivedAsync;
+            _discord.MessageDeleted += OnMessageDeletedAsync;
             PrettyConsole.Log(LogSeverity.Info, "Services", "Enabled SwindleService");
         }
 
@@ -52,7 +53,7 @@ namespace Swindlecord.Services
             return Task.CompletedTask;
         }
 
-        private Task OnMessageReceived(SocketMessage s)
+        private Task OnMessageReceivedAsync(SocketMessage s)
         {
             var msg = s as SocketUserMessage;
             if (msg == null || msg.Author.IsBot)
@@ -60,14 +61,19 @@ namespace Swindlecord.Services
 
             if (msg.Content.Length >= 140 || msg.Content.Length == 0)
                 return Task.CompletedTask;
-
-            if (msg.Attachments.Any())
-                return Task.CompletedTask;
-
+            
             if (ContainsBlacklistedWord(msg.Content))
                 return Task.CompletedTask;
 
             _messages.Add(msg);
+            return Task.CompletedTask;
+        }
+
+        private Task OnMessageDeletedAsync(Cacheable<IMessage, ulong> msg, ISocketMessageChannel channel)
+        {
+            var deleted = _messages.FirstOrDefault(x => x.Id == msg.Id);
+            if (deleted != null)
+                _messages.Remove(deleted);
             return Task.CompletedTask;
         }
 
@@ -88,8 +94,9 @@ namespace Swindlecord.Services
                         return;
                     }
 
-                    var response = await _twitter.Statuses.UpdateAsync(selected.Resolve(), possibly_sensitive: true);
-                    await _log.SendMessageAsync("", embed: TwitterHelper.GetPostedEmbed(selected, response.Id));
+                    var mediaIds = await GetMediaIdsAsync(selected);
+                    var status = await _twitter.Statuses.UpdateAsync(selected.Resolve(), possibly_sensitive: true, media_ids: mediaIds);
+                    await _log.SendMessageAsync("", embed: TwitterHelper.GetPostedEmbed(selected, status.Id));
 
                     await PrettyConsole.LogAsync(LogSeverity.Info, "SwindleService", $"Cleared {_messages.Count} from cache");
                     _messages.Clear();
@@ -115,9 +122,39 @@ namespace Swindlecord.Services
                 var match = new Regex(pattern, RegexOptions.IgnoreCase).IsMatch(content);
 
                 if (match)
+                {
+                    PrettyConsole.Log(LogSeverity.Info, "SwindleService", $"Skipped `{content}` for containing a blacklisted word.");
                     return true;
+                }
             }
 
+            return false;
+        }
+
+        private async Task<IEnumerable<long>> GetMediaIdsAsync(SocketUserMessage msg)
+        {
+            var mediaIds = new List<long>();
+            var attachment = msg.Attachments.FirstOrDefault();
+            if (attachment != null && IsImageFile(attachment.Filename))
+            {
+                using (var http = new HttpClient())
+                using (var request = new HttpRequestMessage(HttpMethod.Get, attachment.Url))
+                {
+                    var response = await request.Content.ReadAsStreamAsync();
+                    var media = await _twitter.Media.UploadAsync(response);
+                    mediaIds.Add(media.MediaId);
+                }
+            }
+            return mediaIds;
+        }
+
+        private bool IsImageFile(string fileName)
+        {
+            if (fileName.EndsWith("png")) return true;
+            if (fileName.EndsWith("jpg")) return true;
+            if (fileName.EndsWith("jpeg")) return true;
+            if (fileName.EndsWith("gif")) return true;
+            if (fileName.EndsWith("bmp")) return true;
             return false;
         }
     }
