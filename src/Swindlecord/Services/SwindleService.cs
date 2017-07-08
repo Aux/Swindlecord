@@ -7,11 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Swindlecord.Services
 {
-    public class TweetService
+    public class SwindleService
     {
         private readonly DiscordShardedClient _discord;
         private readonly IConfigurationRoot _config;
@@ -22,8 +23,9 @@ namespace Swindlecord.Services
         private List<SocketUserMessage> _messages;
         private SocketTextChannel _log;
         private HttpClient _http;
+        private Task _task;
         
-        public TweetService(
+        public SwindleService(
             DiscordShardedClient discord,
             IConfigurationRoot config,
             Tokens twitter,
@@ -36,6 +38,7 @@ namespace Swindlecord.Services
             
             _messages = new List<SocketUserMessage>();
             _http = new HttpClient();
+            _task = RunAsync();
             _discord.MessageReceived += OnMessageReceived;
         }
 
@@ -49,6 +52,9 @@ namespace Swindlecord.Services
                 return Task.CompletedTask;
 
             if (msg.Attachments.Any())
+                return Task.CompletedTask;
+
+            if (ContainsBlacklistedWord(msg.Content))
                 return Task.CompletedTask;
 
             _messages.Add(msg);
@@ -66,9 +72,15 @@ namespace Swindlecord.Services
                     await Task.Delay(_postEvery);
 
                     int index = _random.Next(0, _messages.Count());
-                    var selected = _messages.ElementAt(index);
+                    var selected = _messages.ElementAtOrDefault(index);
                     
-                    var response = await _twitter.Statuses.UpdateAsync(selected.Content, possibly_sensitive: true);
+                    if (selected == null)
+                    {
+                        await _log.SendMessageAsync("I couldn't find any messages to swindle <:ShibeSad:231546068960018433>");
+                        return;
+                    }
+
+                    var response = await _twitter.Statuses.UpdateAsync(selected.Resolve(), possibly_sensitive: true);
                     await _log.SendMessageAsync("", embed: TwitterHelper.GetPostedEmbed(selected, response.Id));
                     _messages.Clear();
                 }
@@ -77,6 +89,26 @@ namespace Swindlecord.Services
             {
                 await PrettyConsole.LogAsync(LogSeverity.Error, "TweetService", ex.ToString());
             }
+        }
+
+        private bool ContainsBlacklistedWord(string content)
+        {
+            var template = _config["regex"];
+            var words = _config.GetSection("blacklist").GetChildren().Select(x => x.Value);
+
+            foreach (var word in words)
+            {
+                string pattern = null;
+                for (int i = 0; i < word.Length - 1; i++)
+                    pattern += word[i] + template;
+
+                var match = new Regex(pattern, RegexOptions.IgnoreCase).IsMatch(content);
+
+                if (match)
+                    return true;
+            }
+
+            return false;
         }
     }
 }

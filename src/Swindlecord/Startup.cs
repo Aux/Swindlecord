@@ -4,7 +4,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Swindlecord.Databases;
 using Swindlecord.Services;
 using Swindlecord.Utility;
 using System;
@@ -22,16 +21,15 @@ namespace Swindlecord
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("blacklist.json", false)
                 .AddJsonFile("configuration.json", false);
             Configuration = builder.Build();
         }
 
         public async Task ConfigureServicesAsync(IServiceCollection services)
         {
-            services.AddDbContext<TweetDatabase>(ServiceLifetime.Transient);
-
             services.AddSingleton<CommandHandlingService>()
-                .AddSingleton<TweetService>()
+                .AddSingleton<SwindleService>()
                 .AddSingleton<Random>()
                 .AddSingleton(Configuration);
 

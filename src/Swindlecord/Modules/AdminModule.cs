@@ -25,7 +25,7 @@ namespace Swindlecord.Modules
             var log = logGuild.GetTextChannel(ulong.Parse(_config["log_channel_id"]));
             var msg = (await Context.Channel.GetMessageAsync(messageId)) as IUserMessage;
             
-            var response = await _twitter.Statuses.UpdateAsync(msg.Content, possibly_sensitive: true);
+            var response = await _twitter.Statuses.UpdateAsync(msg.Resolve(), possibly_sensitive: true);
             await log.SendMessageAsync("", embed: TwitterHelper.GetPostedEmbed(msg, response.Id));
         }
     }

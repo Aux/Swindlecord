@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swindlecord", "src\Swindlecord\Swindlecord.csproj", "{D6FE9914-B9DD-49B4-BD76-AE9709AC4FB7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swindlecord.Core", "src\Swindlecord.Core\Swindlecord.Core.csproj", "{AABCCF83-008F-4716-A9D7-D8DF1BB09BA7}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{D6FE9914-B9DD-49B4-BD76-AE9709AC4FB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6FE9914-B9DD-49B4-BD76-AE9709AC4FB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6FE9914-B9DD-49B4-BD76-AE9709AC4FB7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AABCCF83-008F-4716-A9D7-D8DF1BB09BA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AABCCF83-008F-4716-A9D7-D8DF1BB09BA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AABCCF83-008F-4716-A9D7-D8DF1BB09BA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AABCCF83-008F-4716-A9D7-D8DF1BB09BA7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
