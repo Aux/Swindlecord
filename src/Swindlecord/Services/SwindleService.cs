@@ -14,19 +14,19 @@ namespace Swindlecord.Services
 {
     public class SwindleService
     {
-        private readonly DiscordShardedClient _discord;
+        private readonly DiscordSocketClient _discord;
         private readonly IConfigurationRoot _config;
         private readonly Tokens _twitter;
         private readonly Random _random;
 
-        private TimeSpan _postEvery = TimeSpan.FromMinutes(30);
+        private TimeSpan _postEvery;
         private List<SocketUserMessage> _messages;
         private SocketTextChannel _log;
         private HttpClient _http;
         private Task _task;
         
         public SwindleService(
-            DiscordShardedClient discord,
+            DiscordSocketClient discord,
             IConfigurationRoot config,
             Tokens twitter,
             Random random)
@@ -36,11 +36,20 @@ namespace Swindlecord.Services
             _twitter = twitter;
             _random = random;
             
+            _postEvery = TimeSpan.FromMinutes(int.Parse(_config["post_every"]));
             _messages = new List<SocketUserMessage>();
             _http = new HttpClient();
-            _task = RunAsync();
+            _discord.Ready += OnReadyAsync;
             _discord.MessageReceived += OnMessageReceived;
-            PrettyConsole.Log(LogSeverity.Info, "Services", $"Enabled SwindleService");
+            PrettyConsole.Log(LogSeverity.Info, "Services", "Enabled SwindleService");
+        }
+
+        private Task OnReadyAsync()
+        {
+            var logGuild = _discord.GetGuild(ulong.Parse(_config["log_guild_id"]));
+            _log = logGuild.GetTextChannel(ulong.Parse(_config["log_channel_id"]));
+            _task = RunAsync();
+            return Task.CompletedTask;
         }
 
         private Task OnMessageReceived(SocketMessage s)
@@ -64,8 +73,6 @@ namespace Swindlecord.Services
 
         private async Task RunAsync()
         {
-            _log = _discord.GetChannel(ulong.Parse(_config["log_channel_id"])) as SocketTextChannel;
-
             try
             {
                 while (true)
@@ -83,6 +90,8 @@ namespace Swindlecord.Services
 
                     var response = await _twitter.Statuses.UpdateAsync(selected.Resolve(), possibly_sensitive: true);
                     await _log.SendMessageAsync("", embed: TwitterHelper.GetPostedEmbed(selected, response.Id));
+
+                    await PrettyConsole.LogAsync(LogSeverity.Info, "SwindleService", $"Cleared {_messages.Count} from cache");
                     _messages.Clear();
                 }
             }
