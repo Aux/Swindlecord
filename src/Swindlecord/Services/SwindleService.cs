@@ -19,7 +19,7 @@ namespace Swindlecord.Services
         private readonly Tokens _twitter;
         private readonly Random _random;
 
-        private TimeSpan _postEvery = TimeSpan.FromHours(1);
+        private TimeSpan _postEvery = TimeSpan.FromMinutes(30);
         private List<SocketUserMessage> _messages;
         private SocketTextChannel _log;
         private HttpClient _http;
@@ -40,6 +40,7 @@ namespace Swindlecord.Services
             _http = new HttpClient();
             _task = RunAsync();
             _discord.MessageReceived += OnMessageReceived;
+            PrettyConsole.Log(LogSeverity.Info, "Services", $"Enabled SwindleService");
         }
 
         private Task OnMessageReceived(SocketMessage s)

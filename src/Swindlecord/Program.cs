@@ -15,6 +15,8 @@ namespace Swindlecord
             await Startup.Instance.ConfigureServicesAsync(services);
             var provider = services.BuildServiceProvider();
 
+            provider.GetRequiredService<SwindleService>();
+
             await provider.GetRequiredService<CommandHandlingService>().StartAsync();
             
             await Task.Delay(-1);
