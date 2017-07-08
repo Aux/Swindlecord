@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Swindlecord.Modules
 {
     [RequireOwner]
-    public class AdminModule : ModuleBase<ShardedCommandContext>
+    public class AdminModule : ModuleBase<SocketCommandContext>
     {
         private readonly IConfigurationRoot _config;
         private readonly Tokens _twitter;

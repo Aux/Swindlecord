@@ -11,13 +11,13 @@ namespace Swindlecord.Services
 {
     public class CommandHandlingService
     {
-        private readonly DiscordShardedClient _discord;
+        private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
         private readonly IServiceProvider _provider;
 
         public CommandHandlingService(
             IServiceProvider provider,
-            DiscordShardedClient discord,
+            DiscordSocketClient discord,
             CommandService commands)
         {
             _provider = provider;
@@ -39,7 +39,7 @@ namespace Swindlecord.Services
             if (msg == null || msg.Author.IsBot)
                 return;
 
-            var context = new ShardedCommandContext(_discord, msg);
+            var context = new SocketCommandContext(_discord, msg);
 
             int argPos = 0;
             if (msg.HasMentionPrefix(_discord.CurrentUser, ref argPos))

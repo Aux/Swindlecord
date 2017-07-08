@@ -42,7 +42,7 @@ namespace Swindlecord
            var twitter = Tokens.Create(Configuration["twitter:consumer_key"], Configuration["twitter:consumer_secret"], Configuration["twitter:token"], Configuration["twitter:secret"]);
 
             // Discord
-            var discord = new DiscordShardedClient(new DiscordSocketConfig
+            var discord = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Verbose,
                 MessageCacheSize = 1000
