@@ -1,12 +1,23 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Swindlecord.Services;
+using System.Threading.Tasks;
 
 namespace Swindlecord
 {
     class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
+            => new Program().StartAsync().GetAwaiter().GetResult();
+        
+        public async Task StartAsync()
         {
-            Console.WriteLine("Hello World!");
+            var services = new ServiceCollection();
+            await Startup.Instance.ConfigureServicesAsync(services);
+            var provider = services.BuildServiceProvider();
+
+            await provider.GetRequiredService<CommandHandlingService>().StartAsync();
+            
+            await Task.Delay(-1);
         }
     }
 }
