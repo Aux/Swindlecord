@@ -16,6 +16,7 @@ namespace Swindlecord.Services
     {
         private readonly DiscordSocketClient _discord;
         private readonly IConfigurationRoot _config;
+        private readonly SwindleManager _manager;
         private readonly Tokens _twitter;
         private readonly Random _random;
 
@@ -27,16 +28,19 @@ namespace Swindlecord.Services
         public SwindleService(
             DiscordSocketClient discord,
             IConfigurationRoot config,
+            SwindleManager manager,
             Tokens twitter,
             Random random)
         {
             _discord = discord;
             _config = config;
+            _manager = manager;
             _twitter = twitter;
             _random = random;
             
             _postEvery = TimeSpan.FromMinutes(int.Parse(_config["post_every"]));
             _messages = new List<SocketUserMessage>();
+
             _discord.Ready += OnReadyAsync;
             _discord.MessageReceived += OnMessageReceivedAsync;
             _discord.MessageDeleted += OnMessageDeletedAsync;
@@ -57,10 +61,13 @@ namespace Swindlecord.Services
             if (msg == null || msg.Author.IsBot)
                 return Task.CompletedTask;
 
-            if (msg.Content.Length >= 140 || msg.Content.Length == 0)
+            if (msg.Content.Length >= 140) // Exclude messages too large for a single tweet
                 return Task.CompletedTask;
-            
-            if (ContainsBlacklistedWord(msg.Content))
+
+            if (!msg.Attachments.Any() && msg.Content.Length == 0) // Exclude empty messages that have no attachments
+                return Task.CompletedTask;
+
+            if (ContainsBlacklistedWord(msg.Content))  // Exclude messages that contain naughty words
                 return Task.CompletedTask;
 
             _messages.Add(msg);
@@ -96,13 +103,13 @@ namespace Swindlecord.Services
                     var status = await _twitter.Statuses.UpdateAsync(selected.Resolve(), possibly_sensitive: true, media_ids: mediaIds);
                     await _log.SendMessageAsync("", embed: TwitterHelper.GetPostedEmbed(selected, status.Id));
 
-                    await PrettyConsole.LogAsync(LogSeverity.Info, "SwindleService", $"Cleared {_messages.Count} from cache");
+                    _ = _manager.LogAsync(status.Id, selected, _messages);
                     _messages.Clear();
                 }
             }
             catch (Exception ex)
             {
-                await PrettyConsole.LogAsync(LogSeverity.Error, "TweetService", ex.ToString());
+                await PrettyConsole.LogAsync(LogSeverity.Error, "SwindleService", ex.ToString());
             }
         }
 
@@ -145,7 +152,7 @@ namespace Swindlecord.Services
             }
             return mediaIds;
         }
-
+        
         private bool IsImageFile(string fileName)
         {
             if (fileName.EndsWith("png")) return true;

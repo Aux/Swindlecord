@@ -28,6 +28,10 @@ namespace Swindlecord
 
         public async Task ConfigureServicesAsync(IServiceCollection services)
         {
+            services.AddDbContext<SwindleDatabase>(ServiceLifetime.Transient);
+
+            services.AddTransient<SwindleManager>();
+
             services.AddSingleton<CommandHandlingService>()
                 .AddSingleton<SwindleService>()
                 .AddSingleton<Random>()

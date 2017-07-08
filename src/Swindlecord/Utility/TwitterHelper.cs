@@ -17,7 +17,7 @@ namespace Swindlecord
             string statusUrl = GetStatusUrl(statusId);
 
             var builder = new EmbedBuilder()
-                .WithDescription($"I swindled a message in #{channel}. [Click here to view!]({statusUrl})")
+                .WithDescription($"Got swindled in #{channel}. [Click here to view!]({statusUrl})")
                 .WithCurrentTimestamp();
 
             builder.WithAuthor(x =>
@@ -30,7 +30,7 @@ namespace Swindlecord
             builder.WithFooter(x =>
             {
                 x.IconUrl = guild.IconUrl;
-                x.Text = $"{guild} ({guild.Id})";
+                x.Text = guild.ToString();
             });
 
             return builder;
