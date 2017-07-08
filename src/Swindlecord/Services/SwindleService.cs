@@ -22,7 +22,6 @@ namespace Swindlecord.Services
         private TimeSpan _postEvery;
         private List<SocketUserMessage> _messages;
         private SocketTextChannel _log;
-        private HttpClient _http;
         private Task _task;
         
         public SwindleService(
@@ -38,7 +37,6 @@ namespace Swindlecord.Services
             
             _postEvery = TimeSpan.FromMinutes(int.Parse(_config["post_every"]));
             _messages = new List<SocketUserMessage>();
-            _http = new HttpClient();
             _discord.Ready += OnReadyAsync;
             _discord.MessageReceived += OnMessageReceivedAsync;
             _discord.MessageDeleted += OnMessageDeletedAsync;
