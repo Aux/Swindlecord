@@ -43,6 +43,7 @@ namespace Swindlecord.Services
 
             _discord.Ready += OnReadyAsync;
             _discord.MessageReceived += OnMessageReceivedAsync;
+            _discord.MessageUpdated += OnMessageUpdatedAsync;
             _discord.MessageDeleted += OnMessageDeletedAsync;
             PrettyConsole.Log(LogSeverity.Info, "Services", "Enabled SwindleService");
         }
@@ -55,22 +56,23 @@ namespace Swindlecord.Services
             return Task.CompletedTask;
         }
 
-        private Task OnMessageReceivedAsync(SocketMessage s)
+        private Task OnMessageReceivedAsync(SocketMessage msg)
         {
-            var msg = s as SocketUserMessage;
-            if (msg == null || msg.Author.IsBot)
-                return Task.CompletedTask;
+            if (IsValid(msg))
+                _messages.Add(msg as SocketUserMessage);
+            return Task.CompletedTask;
+        }
 
-            if (msg.Content.Length >= 140) // Exclude messages too large for a single tweet
-                return Task.CompletedTask;
+        private Task OnMessageUpdatedAsync(Cacheable<IMessage, ulong> before, SocketMessage after, ISocketMessageChannel channel)
+        {
+            var updated = _messages.FirstOrDefault(x => x.Id == before.Id);
+            if (updated != null)
+            {
+                _messages.Remove(updated);
 
-            if (!msg.Attachments.Any() && msg.Content.Length == 0) // Exclude empty messages that have no attachments
-                return Task.CompletedTask;
-
-            if (ContainsBlacklistedWord(msg.Content))  // Exclude messages that contain naughty words
-                return Task.CompletedTask;
-
-            _messages.Add(msg);
+                if (IsValid(after))
+                    _messages.Add(after as SocketUserMessage);
+            }
             return Task.CompletedTask;
         }
 
@@ -111,6 +113,20 @@ namespace Swindlecord.Services
             {
                 await PrettyConsole.LogAsync(LogSeverity.Error, "SwindleService", ex.ToString());
             }
+        }
+
+        private bool IsValid(SocketMessage s)
+        {
+            var msg = s as SocketUserMessage;
+            if (msg == null || msg.Author.IsBot || msg.Author.IsWebhook) // Exclude non-user messages
+                return false;
+            if (msg.Content.Length >= 140) // Exclude messages too large for a single tweet
+                return false;
+            if (!msg.Attachments.Any() && msg.Content.Length == 0) // Exclude empty messages that have no attachments
+                return false;
+            if (ContainsBlacklistedWord(msg.Content))  // Exclude messages that contain naughty words
+                return false;
+            return true;
         }
 
         private bool ContainsBlacklistedWord(string content)
