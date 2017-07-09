@@ -161,8 +161,9 @@ namespace Swindlecord.Services
                 using (var http = new HttpClient())
                 using (var request = new HttpRequestMessage(HttpMethod.Get, attachment.Url))
                 {
-                    var response = await request.Content.ReadAsStreamAsync();
-                    var media = await _twitter.Media.UploadAsync(response);
+                    var response = await http.SendAsync(request);
+                    var content = await response.Content.ReadAsStreamAsync();
+                    var media = await _twitter.Media.UploadAsync(content);
                     mediaIds.Add(media.MediaId);
                 }
             }
